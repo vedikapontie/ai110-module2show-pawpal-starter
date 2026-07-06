@@ -11,10 +11,14 @@ Three core actions that a user should be able to perform:
 - Briefly describe your initial UML design.
 - What classes did you include, and what responsibilities did you assign to each?
 
+Based on the requirements, the initial UML design works around the four core classes in an optimal manner for scheduling coordination. The four classes that were used were Owner, Pet, Task, and Scheduler. The Owner class manages the user's profile information and has the access to the pet, essentially a container for the Pet objects. The Pet class has a data object which tracks the pets' information such as its name, species, and age. It also is the owner/manager of the tasks. The Task class has to hold the scheduled time, keep track of the description, amount of time, priority, and if the task has been completed. Finally, the schedule is the central brain which handles the operations, figuring out needs based on the pet/s, sorting chronologically based on times and priority, and detecting time conflicts. 
+
 **b. Design changes**
 
 - Did your design change during implementation?
 - If yes, describe at least one change and why you made it.
+
+Yes I made a design change during implementation, there was a lack of the Pet being linked back to the Owner, I made sure to add that line of code just to have a way to cross check the relationship. Additionally, if there are multiple pets I also added a link from the Task to the Pet. 
 
 ---
 
