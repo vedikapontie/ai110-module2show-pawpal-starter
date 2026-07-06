@@ -1,50 +1,55 @@
 classDiagram
-    class Owner {
-        +owner_id: str
-        +name: str
-        +email: str
-        +preferences: list
-        +created_at: datetime
-        +add_pet(pet: Pet) void
-        +remove_pet(pet_id: str) void
+    class Task {
+        +str title
+        +str description
+        +str time
+        +str frequency
+        +bool completion_status
+        +str task_id
+        +Optional[Pet] pet
+        +Optional[datetime] due_date
+        +mark_complete(pet: Optional[Pet] = None) Optional[Task]
     }
 
     class Pet {
-        +pet_id: str
-        +name: str
-        +species: str
-        +age: int
-        +notes: str
-        +created_at: datetime
-        +add_task(task: Task) void
-        +remove_task(task_id: str) void
+        +str pet_id
+        +str name
+        +str species
+        +int age
+        +List[Task] tasks
+        +Optional[Owner] owner
+        +add_task(task: Task) None
     }
 
-    class Task {
-        +task_id: str
-        +title: str
-        +description: str
-        +duration_minutes: int
-        +priority: str
-        +scheduled_time: datetime
-        +is_completed: bool
-        +created_at: datetime
-        +mark_complete() void
-        +update_schedule(time: datetime) void
+    class Owner {
+        +str owner_id
+        +str name
+        +str email
+        +List[str] preferences
+        +datetime created_at
+        +List[Pet] pets
+        +add_pet(pet: Pet) None
+        +get_pets() List[Pet]
+        +get_all_tasks() List[Task]
     }
 
     class Scheduler {
-        +scheduler_id: str
-        +generated_at: datetime
-        +plan: list[Task]
-        +schedule_tasks(tasks: list[Task], pets: list[Pet], owner: Owner) list[Task]
-        +sort_tasks(tasks: list[Task]) list[Task]
-        +detect_conflicts(tasks: list[Task]) list[Task]
-        +explain_plan() str
+        +str scheduler_id
+        +Optional[datetime] generated_at
+        +List[Task] plan
+        +compile_tasks_for_owner(owner: Owner) List[Task]
+        +sort_by_time(tasks: List[Task]) List[Task]
+        +filter_tasks(tasks: List[Task], pet_name: Optional[str] = None, status: Optional[bool] = None, completed: Optional[bool] = None) List[Task]
+        +sort_tasks(tasks: List[Task]) List[Task]
+        +check_conflicts(tasks: List[Task]) Optional[str]
+        +detect_conflicts(tasks: List[Task]) List[str]
+        +_task_sort_key(task: Task) tuple[int, int, str]
+        +_time_to_minutes(time_value: str) int
+        +_minutes_to_time(minutes: int) str
     }
 
     Owner "1" --> "0..*" Pet : owns
-    Pet "1" --> "0..*" Task : has
-    Scheduler ..> Owner : uses
-    Scheduler ..> Pet : reviews
-    Scheduler ..> Task : orders
+    Pet "1" --> "0..*" Task : contains
+    Scheduler ..> Owner : compiles for
+    Scheduler ..> Pet : inspects
+    Scheduler ..> Task : sorts / filters / checks

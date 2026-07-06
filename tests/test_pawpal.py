@@ -47,3 +47,16 @@ def test_conflict_detection():
     assert warning is not None
     assert "08:00" in warning
     assert "Warning" in warning
+
+
+def test_completed_tasks_do_not_trigger_conflict_warnings():
+    # Completed tasks should not count as active conflicts in the schedule view.
+    scheduler = Scheduler()
+    tasks = [
+        Task(title="Feed Breakfast", time="08:00", completion_status=True),
+        Task(title="Morning Walk", time="08:00"),
+    ]
+
+    warning = scheduler.check_conflicts(tasks)
+
+    assert warning is None

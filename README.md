@@ -100,10 +100,21 @@ The scheduler now includes a small set of smart behaviors to keep pet care plans
 
 Describe your app in numbered steps so a reader can follow along without watching a video:
 
-1. <!-- Describe this step -->
-2. <!-- Describe this step -->
-3. <!-- Describe this step -->
-4. <!-- Describe this step -->
-5. <!-- Add more steps as needed -->
+1. <!-- Describe this step --> Add pet name and information
+2. <!-- Describe this step --> Schedule tasks for the pet of your choice at the designated times and select priority
+3. <!-- Describe this step --> Add task to scheduler
+4. <!-- Describe this step --> View scheduler for the plan of the day
+5. <!-- Add more steps as needed --> After completing a task press task completed
+6. There will be warnings if more than one task is scheduled at the same time
+
+----------------------------------------
+Mochi      07:30    Morning Walk         Pending 
+Mochi      08:00    Feed Breakfast       Pending 
+Mochi      09:00    Morning Medicine     Pending 
+Mochi      14:00    Evening Check        Pending 
+Luna       18:00    Play Session         Pending 
+Luna       19:00    Snack Time           Pending 
+Luna       20:00    Clean Litter Box     Pending 
+----------------------------------------
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->

@@ -2,7 +2,7 @@ from datetime import datetime
 
 import streamlit as st
 
-from pawpal_system import Owner, Pet, Task
+from pawpal_system import Owner, Pet, Scheduler, Task
 
 if "owner" not in st.session_state:
     st.session_state["owner"] = Owner(owner_id="owner-1", name="Jordan")
@@ -106,7 +106,13 @@ if owner.get_pets():
             for task in pet.tasks:
                 status = "Done" if task.completion_status else "Pending"
                 due_text = f" | due {task.due_date.strftime('%Y-%m-%d')}" if task.due_date else ""
-                st.write(f"- {task.title} at {task.time} ({status}{due_text})")
+                task_text = f"- {task.title} at {task.time} ({status}{due_text})"
+
+                if task.completion_status:
+                    st.markdown(f"<div style='opacity:0.5'>{task_text}</div>", unsafe_allow_html=True)
+                else:
+                    st.write(task_text)
+
                 if not task.completion_status and task.frequency.lower() in {"daily", "weekly"}:
                     if st.button(
                         f"Mark complete: {task.title}",
@@ -122,18 +128,53 @@ else:
 st.divider()
 
 st.subheader("Build Schedule")
-st.caption("This button should call your scheduling logic once you implement it.")
+st.caption("Your active itinerary is sorted, filtered, and formatted for quick review.")
 
-if st.button("Generate schedule"):
-    st.warning(
-        "Not implemented yet. Next step: create your scheduling logic (classes/functions) and call it here."
-    )
-    st.markdown(
-        """
-Suggested approach:
-1. Design your UML (draft).
-2. Create class stubs (no logic).
-3. Implement scheduling behavior.
-4. Connect your scheduler here and display results.
-"""
-    )
+scheduler = Scheduler(scheduler_id="scheduler-1")
+all_tasks = []
+for pet in owner.get_pets():
+    all_tasks.extend(pet.tasks)
+
+if all_tasks:
+    conflict_warning = scheduler.check_conflicts(all_tasks)
+    if conflict_warning:
+        st.warning(f"⚠️ {conflict_warning}")
+
+    with st.sidebar:
+        st.subheader("Schedule Filters")
+        pet_filter = st.selectbox("Filter by pet", ["All pets", *sorted({pet.name for pet in owner.get_pets()})])
+        status_filter = st.selectbox("Filter by status", ["All", "Pending", "Completed"])
+
+    if pet_filter != "All pets":
+        filtered_tasks = scheduler.filter_tasks(all_tasks, pet_name=pet_filter)
+    else:
+        filtered_tasks = list(all_tasks)
+
+    if status_filter == "Pending":
+        filtered_tasks = scheduler.filter_tasks(filtered_tasks, status=False)
+    elif status_filter == "Completed":
+        filtered_tasks = scheduler.filter_tasks(filtered_tasks, status=True)
+
+    ordered_tasks = scheduler.sort_by_time(filtered_tasks)
+
+    if ordered_tasks:
+        st.success("Your schedule has been arranged chronologically.")
+        schedule_data = []
+        for task in ordered_tasks:
+            pet_name = task.pet.name if task.pet else "Unknown"
+            status_text = "✅ Completed" if task.completion_status else "⏳ Pending"
+            schedule_data.append(
+                {
+                    "Time": task.time,
+                    "Pet": pet_name,
+                    "Task": task.title,
+                    "Status": status_text,
+                    "Frequency": task.frequency,
+                }
+            )
+
+        st.dataframe(schedule_data, use_container_width=True)
+    else:
+        st.info("No tasks match the selected filters.")
+else:
+    st.info("Schedule tasks first to view your itinerary.")

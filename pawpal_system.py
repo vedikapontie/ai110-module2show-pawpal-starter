@@ -149,19 +149,22 @@ class Scheduler:
         return self.sort_by_time(tasks)
 
     def check_conflicts(self, tasks: List[Task]) -> Optional[str]:
-        """Return a warning string when two tasks share the same HH:MM time."""
+        """Return a warning string when two active tasks share the same HH:MM time."""
+        active_tasks = [task for task in tasks if not task.completion_status]
         seen_times = set()
-        for task in tasks:
+        for task in active_tasks:
             if task.time in seen_times:
                 return f"Warning: Multiple tasks are scheduled at {task.time}!"
             seen_times.add(task.time)
         return None
 
     def detect_conflicts(self, tasks: List[Task]) -> List[str]:
-        """Return warning messages for tasks sharing the same scheduled time."""
+        """Return warning messages for active tasks sharing the same scheduled time."""
         warnings: List[str] = []
         time_map: dict[int, List[Task]] = {}
         for task in tasks:
+            if task.completion_status:
+                continue
             minute_value = self._time_to_minutes(task.time)
             time_map.setdefault(minute_value, []).append(task)
 
