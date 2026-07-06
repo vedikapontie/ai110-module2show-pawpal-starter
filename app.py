@@ -1,4 +1,11 @@
+from datetime import datetime
+
 import streamlit as st
+
+from pawpal_system import Owner, Pet, Task
+
+if "owner" not in st.session_state:
+    st.session_state["owner"] = Owner(owner_id="owner-1", name="Jordan")
 
 st.set_page_config(page_title="PawPal+", page_icon="🐾", layout="centered")
 
@@ -38,35 +45,79 @@ At minimum, your system should:
 
 st.divider()
 
-st.subheader("Quick Demo Inputs (UI only)")
-owner_name = st.text_input("Owner name", value="Jordan")
-pet_name = st.text_input("Pet name", value="Mochi")
-species = st.selectbox("Species", ["dog", "cat", "other"])
+owner = st.session_state["owner"]
 
-st.markdown("### Tasks")
-st.caption("Add a few tasks. In your final version, these should feed into your scheduler.")
+st.subheader("Add a Pet")
+with st.form("add_pet_form"):
+    pet_name = st.text_input("Pet name")
+    species = st.selectbox("Species", ["dog", "cat", "other"])
+    age = st.number_input("Age", min_value=0, max_value=30, value=1)
+    submitted_pet = st.form_submit_button("Add pet")
 
-if "tasks" not in st.session_state:
-    st.session_state.tasks = []
+    if submitted_pet:
+        if pet_name.strip():
+            pet = Pet(
+                pet_id=f"pet-{len(owner.get_pets()) + 1}",
+                name=pet_name.strip(),
+                species=species,
+                age=int(age),
+            )
+            owner.add_pet(pet)
+            st.success(f"{pet.name} was added to your account.")
+        else:
+            st.warning("Please enter a pet name.")
 
-col1, col2, col3 = st.columns(3)
-with col1:
-    task_title = st.text_input("Task title", value="Morning walk")
-with col2:
-    duration = st.number_input("Duration (minutes)", min_value=1, max_value=240, value=20)
-with col3:
-    priority = st.selectbox("Priority", ["low", "medium", "high"], index=2)
+st.subheader("Schedule a Task")
+if owner.get_pets():
+    with st.form("schedule_task_form"):
+        pet_names = [pet.name for pet in owner.get_pets()]
+        selected_pet_name = st.selectbox("Choose pet", pet_names)
+        selected_pet = next(pet for pet in owner.get_pets() if pet.name == selected_pet_name)
 
-if st.button("Add task"):
-    st.session_state.tasks.append(
-        {"title": task_title, "duration_minutes": int(duration), "priority": priority}
-    )
+        task_title = st.text_input("Task title")
+        task_description = st.text_area("Description")
+        task_time = st.text_input("Time (HH:MM)", value="09:00")
+        frequency = st.selectbox("Frequency", ["Daily", "Weekly", "Monthly"])
+        submitted_task = st.form_submit_button("Schedule task")
 
-if st.session_state.tasks:
-    st.write("Current tasks:")
-    st.table(st.session_state.tasks)
+        if submitted_task:
+            if task_title.strip():
+                task = Task(
+                    title=task_title.strip(),
+                    description=task_description.strip(),
+                    time=task_time.strip(),
+                    frequency=frequency,
+                    due_date=datetime.now(),
+                )
+                selected_pet.add_task(task)
+                st.success(f"{task.title} was scheduled for {selected_pet.name}.")
+            else:
+                st.warning("Please enter a task title.")
 else:
-    st.info("No tasks yet. Add one above.")
+    st.info("Add a pet first before scheduling tasks.")
+
+st.divider()
+
+st.subheader("Current Pets and Tasks")
+if owner.get_pets():
+    for pet in owner.get_pets():
+        st.write(f"**{pet.name}** ({pet.species}, age {pet.age})")
+        if pet.tasks:
+            for task in pet.tasks:
+                status = "Done" if task.completion_status else "Pending"
+                due_text = f" | due {task.due_date.strftime('%Y-%m-%d')}" if task.due_date else ""
+                st.write(f"- {task.title} at {task.time} ({status}{due_text})")
+                if not task.completion_status and task.frequency.lower() in {"daily", "weekly"}:
+                    if st.button(
+                        f"Mark complete: {task.title}",
+                        key=f"complete_{pet.pet_id}_{task.title}_{id(task)}",
+                    ):
+                        task.mark_complete(pet=pet)
+                        st.success(f"{task.title} marked complete and the next occurrence was added.")
+        else:
+            st.write("- No tasks yet")
+else:
+    st.info("No pets yet. Add one above.")
 
 st.divider()
 

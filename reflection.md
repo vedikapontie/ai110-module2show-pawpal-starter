@@ -34,6 +34,8 @@ Yes I made a design change during implementation, there was a lack of the Pet be
 - Describe one tradeoff your scheduler makes.
 - Why is that tradeoff reasonable for this scenario?
 
+I made the scheduler check for conflicts by looking at the tasks that have the same starting time; however, it does not check how long a task takes. I believe that this tradeoff is reasonable because it allows the code to run simply without needing complex math. Although the user has to check for these it is fine because the schedule manager makes it clear when the next activity starts. I would like to implement this possibly in the future. 
+
 ---
 
 ## 3. AI Collaboration
