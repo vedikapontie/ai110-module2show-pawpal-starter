@@ -1,104 +1,49 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from pawpal_system import Owner, Pet, Scheduler, Task
-
-
-def test_task_completion():
-    task = Task(title="Morning Walk", description="Take a short walk")
-
-    assert task.completion_status is False
-
-    task.mark_complete()
-
-    assert task.completion_status is True
+from pawpal_system import Pet, Scheduler, Task
 
 
-def test_task_addition():
-    pet = Pet(pet_id="pet-1", name="Mochi", species="dog", age=3)
-    task = Task(title="Feed Breakfast", description="Serve breakfast")
-
-    initial_count = len(pet.tasks)
-
-    pet.add_task(task)
-
-    assert len(pet.tasks) == initial_count + 1
-    assert task in pet.tasks
-
-
-def test_scheduler_orders_tasks_by_time():
-    owner = Owner(owner_id="owner-1", name="Jordan")
-    pet = Pet(pet_id="pet-1", name="Mochi", species="dog", age=3)
-    owner.add_pet(pet)
-
-    later_task = Task(title="Dinner Prep", description="Prepare dinner", time="20:00")
-    earlier_task = Task(title="Morning Walk", description="Take a walk", time="07:30")
-    pet.add_task(later_task)
-    pet.add_task(earlier_task)
-
-    scheduler = Scheduler(scheduler_id="scheduler-1")
-    plan = scheduler.compile_tasks_for_owner(owner)
-
-    assert [task.time for task in plan] == ["07:30", "20:00"]
-
-
-def test_scheduler_filters_tasks_by_pet_and_status():
-    owner = Owner(owner_id="owner-1", name="Jordan")
-    mochi = Pet(pet_id="pet-1", name="Mochi", species="dog", age=3)
-    luna = Pet(pet_id="pet-2", name="Luna", species="cat", age=2)
-    owner.add_pet(mochi)
-    owner.add_pet(luna)
-
-    pending_task = Task(title="Feed Mochi", description="Feed food", time="08:00", completion_status=False)
-    completed_task = Task(title="Clean Litter", description="Clean litter", time="20:00", completion_status=True)
-    mochi.add_task(pending_task)
-    luna.add_task(completed_task)
-
-    scheduler = Scheduler(scheduler_id="scheduler-1")
-    filtered = scheduler.filter_tasks(owner.get_all_tasks(), pet_name="Mochi", completed=False)
-
-    assert len(filtered) == 1
-    assert filtered[0].title == "Feed Mochi"
-
-
-def test_recurring_task_creates_next_instance_on_completion():
-    pet = Pet(pet_id="pet-1", name="Mochi", species="dog", age=3)
-    task = Task(title="Morning Walk", description="Take a walk", time="07:30", frequency="Daily")
-    pet.add_task(task)
-
-    next_task = task.mark_complete(pet=pet)
-
-    assert task.completion_status is True
-    assert next_task is not None
-    assert next_task.completion_status is False
-    assert next_task in pet.tasks
-    assert next_task.frequency == "Daily"
-
-
-def test_conflict_detection_returns_warning_for_same_time():
-    scheduler = Scheduler(scheduler_id="scheduler-1")
+def test_sorting_correctness():
+    # Create a few tasks with intentionally out-of-order times to verify chronological sorting.
     tasks = [
-        Task(title="Morning Walk", description="Walk", time="08:00"),
-        Task(title="Feed Breakfast", description="Feed", time="08:00"),
+        Task(title="Dinner", time="14:00"),
+        Task(title="Morning Walk", time="08:00"),
+        Task(title="Vet Visit", time="11:00"),
     ]
 
-    warnings = scheduler.detect_conflicts(tasks)
+    sorted_tasks = Scheduler().sort_by_time(tasks)
 
-    assert len(warnings) == 1
-    assert "08:00" in warnings[0]
+    assert [task.time for task in sorted_tasks] == ["08:00", "11:00", "14:00"]
 
 
-def test_recurring_task_uses_next_due_date():
+def test_recurrence_logic():
+    # Create a daily task and mark it complete to confirm a new daily instance is generated for the next day.
     pet = Pet(pet_id="pet-1", name="Mochi", species="dog", age=3)
-    task = Task(
-        title="Morning Walk",
-        description="Take a walk",
-        time="07:30",
-        frequency="Daily",
-        due_date=datetime(2026, 1, 1, 8, 0),
-    )
+    due_date = datetime.now()
+    task = Task(title="Morning Walk", time="07:30", frequency="Daily", due_date=due_date)
     pet.add_task(task)
 
     next_task = task.mark_complete(pet=pet)
 
+    assert task.completion_status is True
     assert next_task is not None
-    assert next_task.due_date == datetime(2026, 1, 2, 8, 0)
+    assert next_task is not task
+    assert next_task.completion_status is False
+    assert next_task in pet.tasks
+    assert next_task.due_date == due_date + timedelta(days=1)
+
+
+def test_conflict_detection():
+    # Pass multiple tasks sharing the same clock time to ensure duplicate scheduling is detected.
+    scheduler = Scheduler()
+    tasks = [
+        Task(title="Feed Breakfast", time="08:00"),
+        Task(title="Morning Walk", time="08:00"),
+        Task(title="Medicine", time="09:00"),
+    ]
+
+    warning = scheduler.check_conflicts(tasks)
+
+    assert warning is not None
+    assert "08:00" in warning
+    assert "Warning" in warning

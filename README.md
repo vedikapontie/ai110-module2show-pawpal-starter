@@ -64,11 +64,28 @@ pytest
 pytest --cov
 ```
 
+The PawPal+ test validates the core scheduling behaviors of the backend logic using pytest. It verifies sorting correctness, daily task reoccurence, and checks for duplicate tasks. 
+
 Sample test output:
 
 ```
+python -m pytest
+
 # Paste your pytest output here
 ```
+================================== test session starts ==================================
+platform win32 -- Python 3.13.13, pytest-9.0.3, pluggy-1.6.0
+rootdir: C:\Users\vedik\Documents\GitHub\ai110-module2show-pawpal-starter
+plugins: anyio-4.13.0
+collected 3 items                                                                        
+
+tests\test_pawpal.py ...                                                           [100%]
+
+=================================== 3 passed in 0.07s ===================================
+
+
+Confidence Level: 4 stars
+
 
 ## 📐 Smarter Scheduling
 
